@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'home_screen.dart';
 
 class ResultScreen extends StatefulWidget {
@@ -11,6 +12,36 @@ class ResultScreen extends StatefulWidget {
 }
 
 class _ResultScreenState extends State<ResultScreen> {
+  late FlutterTts flutterTts; 
+  
+  @override
+  void initState() {
+    super.initState();
+    flutterTts = FlutterTts();
+    flutterTts.setLanguage("id-ID"); 
+    flutterTts.setSpeechRate(0.5);
+  }
+
+  /// Fungsi untuk membaca teks
+  Future<void> _speak() async {
+    if (widget.ocrText.isNotEmpty) {
+      await flutterTts.speak(widget.ocrText);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Tidak ada teks untuk dibacakan!'),
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    flutterTts.stop(); // hentikan suara saat halaman ditutup
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,16 +57,30 @@ class _ResultScreenState extends State<ResultScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.home),
-        onPressed: () {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
-            (route) => false,
-          );
-        },
-      ),
-    );
+      floatingActionButton: Row(
+  mainAxisAlignment: MainAxisAlignment.end,
+  children: [
+    FloatingActionButton(
+      heroTag: "ttsButton",
+      backgroundColor: Colors.deepPurple,
+      child: const Icon(Icons.volume_up),
+      onPressed: _speak,
+    ),
+    const SizedBox(width: 16),
+    FloatingActionButton(
+      heroTag: "homeButton",
+      backgroundColor: Colors.green,
+      child: const Icon(Icons.home),
+      onPressed: () {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          (route) => false,
+        );
+      },
+    ),
+  ],
+),
+);
   }
 }
