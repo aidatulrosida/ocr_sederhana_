@@ -4,6 +4,8 @@ import 'package:camera/camera.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:path_provider/path_provider.dart';
 import 'result_screen.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 
 late List<CameraDescription> cameras;
 
@@ -26,23 +28,43 @@ class _ScanScreenState extends State<ScanScreen> {
 
   /// Inisialisasi kamera
   void _initCamera() async {
-    try {
-      cameras = await availableCameras();
-      _controller = CameraController(
-        cameras.first,
-        ResolutionPreset.medium,
-      );
-
-      _initializeControllerFuture = _controller!.initialize();
-      await _initializeControllerFuture;
-
+  try {
+    var status = await Permission.camera.request();
+    if (status.isDenied || status.isPermanentlyDenied) {
       if (mounted) {
-        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pemindaian Gagal! Periksa Izin Kamera atau coba lagi.'),
+          ),
+        );
       }
-    } catch (e) {
-      debugPrint('Error initializing camera: $e');
+      return; // hentikan proses inisialisasi kamera
+    }
+
+    cameras = await availableCameras();
+    _controller = CameraController(
+      cameras.first,
+      ResolutionPreset.medium,
+    );
+
+    _initializeControllerFuture = _controller!.initialize();
+    await _initializeControllerFuture;
+
+    if (mounted) {
+      setState(() {});
+    }
+  } catch (e) {
+    debugPrint('Error initializing camera: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal menginisialisasi kamera.'),
+        ),
+      );
     }
   }
+}
+
 
   @override
   void dispose() {
@@ -85,24 +107,41 @@ class _ScanScreenState extends State<ScanScreen> {
         MaterialPageRoute(
           builder: (_) => ResultScreen(ocrText: ocrText),
         ),
-      );
+      );  
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error: $e')));
-    }
-  }
+  if (!mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text(
+        'Pemindaian Gagal! Periksa Izin Kamera atau coba lagi.',
+      ),
+    ),
+  );
+}
+}
 
   @override
   Widget build(BuildContext context) {
     // Jika controller belum siap, tampilkan loading
-    if (_controller == null || !_controller!.value.isInitialized) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
+    if (_controller == null || !_controller!.value.isInitialized){
+  return Scaffold(
+    backgroundColor: Colors.grey[900],
+    body: const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: Colors.yellow),
+          SizedBox(height: 20),
+          Text(
+            'Memuat Kamera... Harap tunggu.',
+            style: TextStyle(color: Colors.white, fontSize: 18),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 
     return Scaffold(
       appBar: AppBar(
