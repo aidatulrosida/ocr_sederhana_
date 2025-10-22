@@ -34,6 +34,7 @@ class _ScanScreenState extends State<ScanScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
+            backgroundColor: Colors.red,
             content: Text('Pemindaian Gagal! Periksa Izin Kamera atau coba lagi.'),
           ),
         );
